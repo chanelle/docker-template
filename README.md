@@ -70,3 +70,36 @@ The variable `kiwi` was not specified in Asyncy, therefore remains default to `g
 
 ### Ports
 > Needs discussion if this opening ports is possible.
+
+
+### Output
+The output must be in `json` format.
+The container may change, remove or create new data.
+All output is saves, merged into the story data and passed along to the next line in the story.
+
+```py
+# /storydata.json
+{
+  "name": "Joe",
+  "age": 10,
+  "gender": "m"
+}
+```
+
+```sh
+# storyscipt
+run container
+# >>> {"last": "Smoe", "age": 11, "__remove": ["gender"]}
+```
+
+The output from the container is merged with the previous story data below.
+
+```py
+# /storydata.json
+{
+  "name": "Joe",     # value not adjusted
+  "last": "Smoe",    # new value introduced
+  "age": 11,         # changed previous value
+  # "gender"         # value was removed
+}
+```
