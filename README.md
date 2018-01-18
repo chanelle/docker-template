@@ -2,20 +2,19 @@
 
 This repository serves as a template on how to build a container for Asyncy.
 
-#### Container Goals
+#### Asyncy Container Goals
 > 1. **Small footprint.** Containers should be small and quick.
-> 2. **Low complexity.** Containers should do one thing really well.
-> 3. **Simple in/outs.** Simple to define inputs and outputs.
-> 4. **Any language.** Write a container in any programming language.
+> 1. **Low complexity.** Containers should do one thing really well.
+> 1. **Any language.** Write a container in any programming language.
 
-# Asyncy Container Guide
+## Guide
 
 There are 5 important aspects to Asyncy containers to keep in mind
-1. Starting Arguments
-1. Volumes and Files
-1. Environment Variables
-1. Output
-1. Port Binding
+1. [Starting Arguments](#starting-arguments)
+1. [Volumes and Files](#volume-and-files)
+1. [Environment Variables](#environment-variables)
+1. [Output](#output)
+1. [Port Binding](#port-binding)
 
 ### Starting Arguments
 
