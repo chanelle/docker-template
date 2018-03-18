@@ -17,7 +17,7 @@ Most containers can work quickly with limited configuration.
 1. [Ports](#ports)
 1. [Scaling](#scaling)
 1. [Health Checks](#health-checks)
-
+1. [Linux Capacities](#linux-capacities)
 
 # Design
 
@@ -308,3 +308,16 @@ startup:
 ```
 
 This command must exit with status 0. `stdout` is logged and not accessable in the Storyline.
+
+# Linux Capacities
+
+All capacities are stripped from the containers.
+It's required to list linux capacities in the configuration.
+Learn more about [Docker runtime privilege and linux capabilities](https://docs.docker.com/engine/reference/run/#runtime-privilege-and-linux-capabilities).
+
+```yml
+# asyncy.yml
+cap:
+  - chown
+```
+> The configuration above will designate `chown` to be included in the capabilities.
