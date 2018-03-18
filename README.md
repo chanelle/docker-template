@@ -245,7 +245,7 @@ Changes made to this volume will not commit back to source repository.
 ```yml
 # asyncy.yml
 volumes:
-  repository:
+  repo:
     dest: /tmp/repository
     mode: rw
 ```
