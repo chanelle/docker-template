@@ -226,13 +226,13 @@ echo 'INFO foobar' > /data/logs
 
 # Volumes
 
-### Session Volume
+### Story Volume
 A temporary volume is unique to each Storyline and destroyed when the Storyline finishes. If a Storyline is paused the volume will persist until.
 
 ```yml
 # asyncy.yml
 volumes:
-  session:
+  story:
     dest: /tmp/session
     mode: rw
 ```
