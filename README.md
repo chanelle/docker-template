@@ -1,4 +1,4 @@
-# Asyncy Container Template
+# Building Asyncy Containers
 
 To make a container Asyncy-ready there are just a few things to be aware of.
 Most containers can work quickly with limited configuration.
