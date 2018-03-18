@@ -6,17 +6,17 @@ Most containers can work quickly with limited configuration.
 > Our mission is to make container support **as simple as possible without restricting container capabilities**.
 
 ### Topics
-1. [Design](#Design)
-1. [Inputs](#Inputs)
-1. [Outputs](#Outputs)
-1. [Commands](#Commands)
-1. [Environment](#Environment)
-1. [Metrics](#Metrics)
-1. [Logs](#Logs)
-1. [Volumes](#Volumes)
-1. [Ports](#Ports)
-1. [Scaling](#Scaling)
-1. [Health Checks](#Health_Checks)
+1. [Design](#design)
+1. [Inputs](#inputs)
+1. [Outputs](#outputs)
+1. [Commands](#commands)
+1. [Environment](#environment)
+1. [Metrics](#metrics)
+1. [Logs](#logs)
+1. [Volumes](#volumes)
+1. [Ports](#ports)
+1. [Scaling](#scaling)
+1. [Health Checks](#health-checks)
 
 
 # Design
