@@ -17,6 +17,7 @@ Most containers can work quickly with limited configuration.
 1. [Ports](#ports)
 1. [Scaling](#scaling)
 1. [Health Checks](#health-checks)
+1. [Lifecycle](#lifecycle)
 1. [Linux Capacities](#linux-capacities)
 
 # Design
@@ -296,15 +297,16 @@ system:
 
 Inherit from the Dockerfile's `HEALTHCHECK`. https://docs.docker.com/engine/reference/builder/#healthcheck
 
-# Startup
+# Lifecycle
 
-Asyncy will startup containers before they are called in the Storyscript.
-A custom startup command may be provided to prepare the containers execution environment.
+Asyncy will startup containers before they are called in the Storyscript and shutdown the container once no longer needed.
+A user-defined command may be provided to prepare the containers execution environment or clean-up workspace.
 
 ```yml
 # asyncy.yml
-startup:
-  cmd: ./startup.sh
+lifecycle:
+  startup: ./startup.sh
+  shutdown: ./shutdown.sh
 ```
 
 This command must exit with status 0. `stdout` is logged and not accessable in the Storyline.
