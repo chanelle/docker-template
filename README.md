@@ -1,137 +1,310 @@
 # Asyncy Container Template
 
-This repository serves as a template on how to build a container for Asyncy.
+To make a container Asyncy-ready there are just a few things to be aware of.
+Most containers can work quickly with limited configuration.
 
-#### Asyncy Container Goals
-> 1. **Small footprint.** Containers should be small and quick.
-> 1. **Low complexity.** Containers should do one thing really well.
-> 1. **Any language.** Write a container in any programming language.
+> Our mission is to make container support **as simple as possible without restricting container capabilities**.
 
-## Guide
-
-There are 5 important aspects to Asyncy containers to keep in mind
-1. [Starting Arguments](#starting-arguments)
-1. [Volumes and Files](#volume-and-files)
-1. [Environment Variables](#environment-variables)
-1. [Output](#output)
-1. [Port Binding](#port-binding)
-
-### Starting Arguments
-
-These arguments are provided in the Storyscript, as seen below in this example.
-
-```rb
-# example Storyscript
-a = 10
-b = "string"
-if true
-  run owner/container a b
-```
-
-This script above would a container like this: `docker run owner/container 10 "string"`.
-
-> **Note** in your Dockerfile the `ENTRYPOINT` will be executed with the provided arguemnts.
-> If no arguments are provied the `CMD` in your Dockerfile is executed. This is default Docker behavior.
+### Topics
+1. [Design](#Design)
+1. [Inputs](#Inputs)
+1. [Outputs](#Outputs)
+1. [Commands](#Commands)
+1. [Environment](#Environment)
+1. [Metrics](#Metrics)
+1. [Logs](#Logs)
+1. [Volumes](#Volumes)
+1. [Ports](#Ports)
+1. [Scaling](#Scaling)
+1. [Health Checks](#Health_Checks)
 
 
-### Volume and Files
+# Design
 
-When a container runs it is passed a shared volume which is private to the Storyline and writable.
+Use the best practices from Docker.
 
-```
-/tmp/asyncy
-           /repository     # This is the repository the Storyscript belongs to. [Read-only]
-           /example
-              /foobar.txt  # A file that a previous container wrote. [Read-Write]
-```
+A container can accept input and write output (like a traditional function) or stream output into the Storyscript  (like web servers, chat bots, social streams).
 
-Your container can read assets from the repository, such as html files, images, etc.
-Your container may write files to the volume. These files are stored in the volume for the next containers being executed.
+# Input
 
+A container accepts input in the same way you would pass the data via `docker run`.
+Lists and objects in the Storyscript are encoded in JSON format.
 
-### Environment Variables
+| Shell | Storyscript |
+| ----- | ----------- |
+| `docker run container args --kwargs` | `container args --kwargs` |
+| `docker run alpine echo 'Hello world'` | `alpine echo 'Hello world'` |
 
-Define the environment variables in the `Dockerfile`.
-For security purposes, only designated environment variables are passed through containers.
+# Output
 
-```sh
-# Dockerfile
-ENV     EXAMPLE_DEFAULT    default
-ENV     EXAMPLE_REQUIRED   !
-ENV     EXAMPLE_OPTIONAL   _
-ENV     EXAMPLE_READONLY   data --read-only
-```
-> Environment are case-sensitive within your container. Asyncy will case-insensitive map environment variables.
+Data written to `stdout` is considered the results of the containers operation.
 
-```sh
-# using Asyncy CLI
-asyncy config:set example_required=red EXAMPLE_OPTIONAL=yellow
-```
-
-
-### Output
-
-#### Stdout
-All container `stdout` is passed back to the Storyscript when the container exits with status `0` (default).
-
-```sh
-# your foobar/container
-echo "Hello world"
-```
-
-```sh
+```py
 # Storyscript
-data = foobar/container
-print data
->>> "Hello world"
+data = alpine echo 'Hello world'
+log data
+>>> 'Hello world'
 ```
 
-#### Stderr
-If your container exits with not `0` it is considered an error.
-Stdout will be logged then ignored.
-Stderr will be used as the description for the error.
+You can also stream data into the Storyscript.
 
-```sh
-# your foobar/container
-echo "Hello world"
-exit "Woops!"
-```
-
-```sh
+```py
 # Storyscript
-try
-  data = foobar/container
-  print data
-catch output
-  print output
->>> "Woops!"
-```
-> The variable data was never assigned because the container exited with an error.
-
-#### Iteration
-Containers that yield data but remain running are considered streaming containers.
-
-To yield data back into the Storyscript write the data to stdout then a carriage return character to designate the end of the current yield.
-
-```sh
-# your foobar/container
-echo "1"
-echo -e "\r"
-exit "2"
+twitter stream '#FOSS' as tweet
+    log tweet.message
+>>> "Everything should be #FOSS"
+>>> "Checkout my new project on @github #FOSS"
 ```
 
-```sh
-# Storyscript
-stream foobar/container as res
-  print res
-  print 'done'
->>> "1"
->>> "done"
->>> "2"
->>> "done"
+# Commands
+
+Defining commands outline the containers operations and assists the service discovery during Storyscript writting.
+
+```yml
+# asyncy.yml
+commands:
+  go:
+    help: Short description
+    args:
+    - name: foo
+      type: string
+      required: false         # default
+      help: Short description
+    - bar                     # basic argument, description only
+    kwargs:
+    - name: block
+      type: json
+    result:
+      type: json
 ```
 
+### Advanced Configuration
 
-### Port Binding
-Your container may require port binding. To request a port binding simply add the port number to the Dockerfile under `EXPOSE`.
-The container then can bind to the port and wait for incoming traffic.
+In addition to the basics above there are advanced configurations.
+
+<details>
+<summary>Simple Arguments</summary><br>
+
+Containers may list arguments in another way.
+
+```yml
+# asyncy.yml
+commands:
+  go:
+    args:
+    - foo:string
+    - bar
+```
+Where `foo` must be a string and `bar` can be anything.
+
+</details>
+
+<details>
+<summary>Validation</summary><br>
+
+```yml
+# asyncy.yml
+commands:
+  go:
+    args:
+    - name: color hex
+      type: string
+      pattern: '^\#?\w{6}$'
+```
+
+```yml
+# asyncy.yml
+commands:
+  go:
+    args:
+    - name: choose
+      type: string
+      enum:
+      - this
+      - that
+```
+
+</details>
+
+<details>
+<summary>Formatting</summary><br>
+
+Change the order of arguments the container will receive.
+Default is `'* **'` for all args (ordered) then all kwargs (unordered).
+
+```yml
+# asyncy.yml
+commands:
+  go:
+    format: '{bar} {foo} * **' # default
+    args:
+    - foo
+    - bar
+```
+
+</details>
+
+<details>
+<summary>Additional args and kwargs</summary><br>
+
+Container may optionally disable additional args and kwargs.
+
+```yml
+# asyncy.yml
+commands:
+  go:
+    additional_args:
+      type: string
+    additional_kwargs: false
+```
+
+</details>
+
+
+# Environment
+
+Containers should list environment variables that are needed to run the container.
+
+```yml
+# asyncy.yml
+env:
+  access_token:
+    type: string      # define the object type: string, int, list
+    pattern: "^key_"  # regexp validation
+    required: true    # default
+    help: |
+      Description of how the user should produce this variable
+```
+> Lists are JSON encoded `KEY="[1,2,3]"`
+
+Containers will **only** get the environment variables that are requested.
+Application and other container environment variables are strictly not provided.
+
+# Metrics
+
+Containers can write custom metrics which are handled automatically by Asyncy.
+
+Choose your metrics output format:
+
+<details>
+<summary>Metrics 2.0 (recommended)</summary><br>
+
+Write [Metrics 2.0](http://metrics20.org/) output to `/data/metrics/2.0`.
+
+```shell
+echo '
+{
+    host: dfs1
+    what: diskspace
+    mountpoint: srv/node/dfs10
+    unit: B
+    type: used
+    metric_type: gauge
+}
+meta: {
+    agent: diamond,
+    processed_by: statsd2
+}
+' >> /data/metrics/2.0
+```
+
+</details>
+
+
+# Logs
+
+Write logs to `/data/logs` formatted with log level first.
+
+```shell
+echo 'INFO foobar' > /data/logs
+```
+> `INFO` is assumed if no level is provided.
+> Timestamp is included if not provided.
+
+
+
+# Volumes
+
+### Session Volume
+A temporary volume is unique to each Storyline and destroyed when the Storyline finishes. If a Storyline is paused the volume will persist until.
+
+```yml
+# asyncy.yml
+volumes:
+  session:
+    dest: /tmp/session
+    mode: rw
+```
+
+### Repository Volume
+This volume is a clone of the repository from which the Storyscript is stored.
+Access the repository assets e.g., images, html and source code.
+Changes made to this volume will not commit back to source repository.
+
+```yml
+# asyncy.yml
+volumes:
+  repository:
+    dest: /tmp/repository
+    mode: rw
+```
+
+### Persistent Volume
+
+Persistent volumes may be created and shared between containers. Used for storing long-term data.
+
+```yml
+# asyncy.yml
+volumes:
+  foobar:  # custom title
+    dest: /var/data
+```
+
+# Scaling
+
+Define scaling schedules.
+
+```yml
+# asyncy.yml
+scale:
+  # [TODO]
+```
+
+# Ports
+
+List the ports that need binding upon container startup.
+
+```yml
+# asyncy.yml
+ports:
+  - 8080
+```
+
+# System Requirements
+
+Define containers system requirements.
+
+```yml
+# asyncy.yml
+system:
+  cpu: 1         # default
+  gpu: 0         # default
+  memory: 250GB  # default
+```
+
+# Health Checks
+
+Inherit from the Dockerfile's `HEALTHCHECK`. https://docs.docker.com/engine/reference/builder/#healthcheck
+
+# Startup
+
+Asyncy will startup containers before they are called in the Storyscript.
+A custom startup command may be provided to prepare the containers execution environment.
+
+```yml
+# asyncy.yml
+startup:
+  cmd: ./startup.sh
+```
+
+This command must exit with status 0. `stdout` is logged and not accessable in the Storyline.
